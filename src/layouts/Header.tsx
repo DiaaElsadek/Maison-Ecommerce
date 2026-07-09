@@ -21,7 +21,7 @@ export function Header() {
       <AnnouncementBar />
       <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
         <div className="max-w-screen-xl mx-auto px-6">
-          <div className="relative flex items-center justify-between h-16">
+          <div className="flex items-center justify-between h-16">
             {/* Left nav */}
             <nav className="hidden lg:flex items-center gap-8" aria-label="Main categories">
               {CATEGORY_IDS.map((c) => (
@@ -36,7 +36,7 @@ export function Header() {
             </nav>
 
             {/* Logo */}
-            <Link to="/" className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2.5 group">
+            <Link to="/" className="flex items-center gap-2.5 group">
               <Logo />
             </Link>
 
