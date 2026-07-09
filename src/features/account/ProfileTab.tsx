@@ -2,21 +2,21 @@ import React from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { FormInput } from '@/components/ui/form-input';
-import type { User } from '@/types';
+import type { FakeUser } from '@/types/api';
 
 interface ProfileTabProps {
-  user: User | null;
+  user: FakeUser | null;
 }
 
 export function ProfileTab({ user }: ProfileTabProps) {
-  const firstName = user?.name.split(' ')[0] || '';
-  const lastName = user?.name.split(' ')[1] || '';
+  const firstName = user?.name?.firstname || '';
+  const lastName = user?.name?.lastname || '';
 
   return (
     <div>
       <h2 className="text-xl font-medium mb-6 font-display">Personal Information</h2>
-      <div className="w-16 h-16 bg-foreground rounded-full flex items-center justify-center text-primary-foreground text-xl mb-6 font-display">
-        {user?.name?.[0] || 'G'}
+      <div className="w-16 h-16 bg-foreground rounded-full flex items-center justify-center text-primary-foreground text-xl mb-6 font-display uppercase">
+        {firstName?.[0] || 'G'}
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-lg">
         <FormInput label="First Name" value={firstName} onChange={() => {}} />
@@ -43,9 +43,9 @@ export function ProfileTab({ user }: ProfileTabProps) {
               Default
             </span>
           </div>
-          <p className="font-medium text-sm mb-1">{user?.name || 'Guest'}</p>
-          <p className="text-sm text-muted-foreground">42 Portobello Road</p>
-          <p className="text-sm text-muted-foreground">London, W11 2DQ</p>
+          <p className="font-medium text-sm mb-1 uppercase">{firstName} {lastName || 'Guest'}</p>
+          <p className="text-sm text-muted-foreground">{user?.address?.street || '42 Portobello Road'} {user?.address?.number || ''}</p>
+          <p className="text-sm text-muted-foreground">{user?.address?.city || 'London'}, {user?.address?.zipcode || 'W11 2DQ'}</p>
           <p className="text-sm text-muted-foreground">United Kingdom</p>
           <div className="flex gap-4 mt-4">
             <button className="text-xs text-muted-foreground hover:text-foreground underline font-mono-brand">

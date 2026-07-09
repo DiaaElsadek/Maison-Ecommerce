@@ -3,6 +3,7 @@ import { Outlet, useLocation } from 'react-router';
 import { Header } from './Header';
 import { Footer } from './Footer';
 import { useScrollToTop } from '@/hooks/use-scroll-to-top';
+import { CompareDrawer } from '@/features/compare/CompareDrawer';
 
 export function PageShell() {
   useScrollToTop();
@@ -16,6 +17,7 @@ export function PageShell() {
         <Outlet />
       </main>
       {!isAuth && <Footer />}
+      <CompareDrawer />
     </div>
   );
 }

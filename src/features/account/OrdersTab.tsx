@@ -3,70 +3,74 @@ import { Truck, RotateCcw } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
 import { fmt } from '@/lib/format';
 import { cn } from '@/lib/utils';
-import { PRODUCTS } from '@/data/products';
-
-const MOCK_ORDERS = [
-  {
-    id: 'MSN-K8PQ2A',
-    date: '14 January 2025',
-    status: 'Delivered',
-    items: 2,
-    total: 1770,
-    tracking: 'OFW9821001GB',
-  },
-  {
-    id: 'MSN-J7MN4C',
-    date: '3 December 2024',
-    status: 'Delivered',
-    items: 1,
-    total: 480,
-    tracking: 'OFW9733882GB',
-  },
-  {
-    id: 'MSN-R5XL9E',
-    date: '18 November 2024',
-    status: 'Processing',
-    items: 3,
-    total: 2040,
-    tracking: '',
-  },
-];
+import { useAuth } from '@/hooks/use-auth';
+import { useQuery } from '@tanstack/react-query';
+import { cartsApi } from '@/lib/api/carts';
+import { productsApi } from '@/lib/api/products';
+import { Skeleton } from '@/app/components/ui/skeleton';
 
 export function OrdersTab() {
+  const { user } = useAuth();
+  
+  const { data: carts = [], isLoading: isLoadingCarts } = useQuery({
+    queryKey: ['user-carts', user?.id],
+    queryFn: () => cartsApi.getUserCarts(user?.id || 1),
+    enabled: !!user
+  });
+
+  const { data: allProducts = [] } = useQuery({
+    queryKey: ['all-products'],
+    queryFn: () => productsApi.getAllProducts()
+  });
+
+  const getProductImage = (id: number) => {
+    const p = allProducts.find(p => p.id === id);
+    return p?.image || '';
+  };
+
   return (
     <div>
       <h2 className="text-xl font-medium mb-6 font-display">Order History</h2>
       <div className="space-y-4">
-        {MOCK_ORDERS.map((order) => (
+        {isLoadingCarts ? (
+          Array.from({ length: 2 }).map((_, i) => (
+            <Skeleton key={i} className="h-48 w-full" />
+          ))
+        ) : carts.length === 0 ? (
+          <p className="text-muted-foreground text-sm">You have no past orders.</p>
+        ) : carts.map((order) => (
           <div key={order.id} className="border border-border p-6">
             <div className="flex items-start justify-between mb-4">
               <div>
-                <p className="text-xs text-muted-foreground mb-1 font-mono-brand">{order.date}</p>
-                <p className="font-medium font-mono-brand">{order.id}</p>
+                <p className="text-xs text-muted-foreground mb-1 font-mono-brand">{new Date(order.date).toLocaleDateString()}</p>
+                <p className="font-medium font-mono-brand">Order #{order.id}</p>
               </div>
               <div className="text-right">
                 <span
-                  className={cn(
-                    'text-xs px-2 py-1 font-mono-brand',
-                    order.status === 'Delivered'
-                      ? 'bg-secondary text-foreground'
-                      : 'bg-accent text-accent-foreground'
-                  )}
+                  className="text-xs px-2 py-1 font-mono-brand bg-secondary text-foreground"
                 >
-                  {order.status}
+                  Delivered
                 </span>
-                <p className="text-sm font-medium mt-2">{fmt(order.total)}</p>
+                {/* FakeStoreAPI carts don't include pricing, so we'll mock total or calc from products if available */}
+                <p className="text-sm font-medium mt-2">
+                  {fmt(order.products.reduce((acc, p) => {
+                    const matched = allProducts.find(x => x.id === p.productId);
+                    return acc + ((matched?.price || 0) * p.quantity);
+                  }, 0))}
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-3 mb-4">
-              {PRODUCTS.slice(0, order.items).map((p, i) => (
+              {order.products.slice(0, 3).map((p, i) => (
                 <div key={i} className="w-12 h-14 bg-secondary overflow-hidden">
-                  <img src={p.images[0]} alt={p.name} className="w-full h-full object-cover" />
+                  {getProductImage(p.productId) && (
+                    <img src={getProductImage(p.productId)} alt="Product" className="w-full h-full object-cover" />
+                  )}
                 </div>
               ))}
-              {order.items > 3 && (
+              {order.products.length > 3 && (
                 <span className="text-xs text-muted-foreground font-mono-brand">
-                  +{order.items - 3} more
+                  +{order.products.length - 3} more
                 </span>
               )}
             </div>
@@ -74,16 +78,6 @@ export function OrdersTab() {
               <Button variant="outline" size="sm">
                 View Order
               </Button>
-              {order.tracking && (
-                <Button variant="ghost" size="sm">
-                  <Truck className="w-3 h-3" /> Track
-                </Button>
-              )}
-              {order.status === 'Delivered' && (
-                <Button variant="ghost" size="sm">
-                  <RotateCcw className="w-3 h-3" /> Return
-                </Button>
-              )}
             </div>
           </div>
         ))}

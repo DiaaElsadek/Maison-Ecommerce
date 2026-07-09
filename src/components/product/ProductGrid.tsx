@@ -1,10 +1,10 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { ProductCard } from './ProductCard';
-import type { Product } from '@/types';
+import type { FakeProduct } from '@/types/api';
 
 interface ProductGridProps {
-  products: Product[];
+  products: FakeProduct[];
   columns?: 2 | 3 | 4;
   className?: string;
 }

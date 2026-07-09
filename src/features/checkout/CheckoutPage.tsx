@@ -7,10 +7,15 @@ import { FormInput } from '@/components/ui/form-input';
 import { cn } from '@/lib/utils';
 import { fmt } from '@/lib/format';
 import { useCart } from '@/hooks/use-cart';
+import { useAuth } from '@/hooks/use-auth';
+import { useMutation } from '@tanstack/react-query';
+import { cartsApi } from '@/lib/api/carts';
+import { toast } from 'sonner';
 
 export function CheckoutPage() {
   const navigate = useNavigate();
   const { items, subtotal, getShipping } = useCart();
+  const { user } = useAuth();
   const [step, setStep] = useState(1);
   const [form, setForm] = useState({
     firstName: '',
@@ -34,17 +39,31 @@ export function CheckoutPage() {
 
   const updateForm = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
-  const handlePlaceOrder = () => {
-    navigate('/checkout/confirmation', {
-      state: {
-        orderData: {
-          ...form,
-          total,
-          shipping,
+  const checkoutMutation = useMutation({
+    mutationFn: async () => {
+      const cartProducts = items.map((i) => ({ productId: Number(i.product.id), quantity: i.quantity }));
+      return cartsApi.addCart(user?.id || 1, cartProducts);
+    },
+    onSuccess: () => {
+      toast.success('Order placed successfully!');
+      navigate('/checkout/confirmation', {
+        state: {
+          orderData: {
+            ...form,
+            total,
+            shipping,
+          },
         },
-      },
-      replace: true,
-    });
+        replace: true,
+      });
+    },
+    onError: () => {
+      // Axios interceptor will handle error toast
+    }
+  });
+
+  const handlePlaceOrder = () => {
+    checkoutMutation.mutate();
   };
 
   return (
@@ -292,13 +311,14 @@ export function CheckoutPage() {
                 className="w-full"
                 onClick={handlePlaceOrder}
                 disabled={
+                  checkoutMutation.isPending ||
                   !form.cardName ||
                   form.cardNumber.replace(/\s/g, '').length < 16 ||
                   !form.expiry ||
                   form.cvv.length < 3
                 }
               >
-                <Lock className="w-4 h-4" /> Place Order · {fmt(total)}
+                <Lock className="w-4 h-4" /> {checkoutMutation.isPending ? 'Processing...' : `Place Order · ${fmt(total)}`}
               </Button>
             </div>
           )}
@@ -313,8 +333,8 @@ export function CheckoutPage() {
                 <div key={`${item.product.id}-${item.size}`} className="flex gap-3">
                   <div className="w-12 h-14 flex-shrink-0 bg-white overflow-hidden relative">
                     <img
-                      src={item.product.images[0]}
-                      alt={item.product.name}
+                      src={item.product.image}
+                      alt={item.product.title}
                       className="w-full h-full object-cover"
                     />
                     <span className="absolute -top-1 -right-1 w-4 h-4 bg-foreground text-primary-foreground text-[9px] flex items-center justify-center font-mono-brand">
@@ -322,7 +342,7 @@ export function CheckoutPage() {
                     </span>
                   </div>
                   <div className="flex-1">
-                    <p className="text-xs font-medium line-clamp-1">{item.product.name}</p>
+                    <p className="text-xs font-medium line-clamp-1">{item.product.title}</p>
                     <p className="text-xs text-muted-foreground font-mono-brand">
                       {item.size} · {item.color}
                     </p>

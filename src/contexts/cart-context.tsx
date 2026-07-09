@@ -7,8 +7,8 @@ interface CartContextValue {
   itemCount: number;
   subtotal: number;
   addItem: (item: CartItem) => void;
-  updateQuantity: (productId: string, size: string, color: string, quantity: number) => void;
-  removeItem: (productId: string, size: string, color: string) => void;
+  updateQuantity: (productId: number, size: string, color: string, quantity: number) => void;
+  removeItem: (productId: number, size: string, color: string) => void;
   clearCart: () => void;
   getShipping: (method?: 'standard' | 'express') => number;
 }
@@ -57,7 +57,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   );
 
   const updateQuantity = useCallback(
-    (productId: string, size: string, color: string, quantity: number) => {
+    (productId: number, size: string, color: string, quantity: number) => {
       updateItems((prev) =>
         prev.map((i) =>
           i.product.id === productId && i.size === size && i.color === color
@@ -70,7 +70,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   );
 
   const removeItem = useCallback(
-    (productId: string, size: string, color: string) => {
+    (productId: number, size: string, color: string) => {
       updateItems((prev) =>
         prev.filter(
           (i) => !(i.product.id === productId && i.size === size && i.color === color)

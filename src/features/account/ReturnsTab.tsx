@@ -1,8 +1,16 @@
 import React from 'react';
 import { Button } from '@/app/components/ui/button';
-import { PRODUCTS } from '@/data/products';
+import { useQuery } from '@tanstack/react-query';
+import { productsApi } from '@/lib/api/products';
+import { Skeleton } from '@/app/components/ui/skeleton';
 
 export function ReturnsTab() {
+  const { data: allProducts = [], isLoading } = useQuery({
+    queryKey: ['all-products'],
+    queryFn: () => productsApi.getAllProducts()
+  });
+
+  const demoProduct = allProducts[0];
   return (
     <div>
       <h2 className="text-xl font-medium mb-6 font-display">Returns & Exchanges</h2>
@@ -17,10 +25,18 @@ export function ReturnsTab() {
       <div className="border border-border p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <div className="w-12 h-14 bg-secondary overflow-hidden flex-shrink-0">
-            <img src={PRODUCTS[0].images[0]} alt="" className="w-full h-full object-cover" />
+            {isLoading ? (
+              <Skeleton className="w-full h-full" />
+            ) : (
+              <img src={demoProduct?.image} alt="" className="w-full h-full object-cover" />
+            )}
           </div>
           <div>
-            <p className="text-sm font-medium">{PRODUCTS[0].name}</p>
+            {isLoading ? (
+              <Skeleton className="w-24 h-4 mb-2" />
+            ) : (
+              <p className="text-sm font-medium line-clamp-1">{demoProduct?.title || 'Product'}</p>
+            )}
             <p className="text-xs text-muted-foreground font-mono-brand">
               MSN-K8PQ2A · Size M · Camel
             </p>

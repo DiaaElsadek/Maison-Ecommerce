@@ -6,14 +6,23 @@ import { Button } from '@/app/components/ui/button';
 import { ProductCard } from '@/components/product/ProductCard';
 import { StarRating } from '@/components/brand/StarRating';
 import { TrustBar } from '@/components/layout/TrustBar';
-import { getNewArrivals, getBestsellers } from '@/data/products';
+import { useQuery } from '@tanstack/react-query';
+import { productsApi } from '@/lib/api/products';
 import { CATEGORIES } from '@/data/categories';
 import { BLOG_POSTS } from '@/data/blog-posts';
+import { Skeleton } from '@/app/components/ui/skeleton';
+import { RecentlyViewedCarousel } from '@/features/recentlyViewed/RecentlyViewedCarousel';
 
 export function HomePage() {
   const navigate = useNavigate();
-  const newArrivals = getNewArrivals();
-  const bestsellers = getBestsellers();
+  
+  const { data: products = [], isLoading } = useQuery({
+    queryKey: ['home-products'],
+    queryFn: () => productsApi.getAllProducts(8)
+  });
+
+  const newArrivals = products.slice(0, 4);
+  const bestsellers = products.slice(4, 8);
 
   return (
     <div>
@@ -98,9 +107,13 @@ export function HomePage() {
           </button>
         </div>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-          {newArrivals.map((p) => (
-            <ProductCard key={p.id} product={p} />
-          ))}
+          {isLoading ? (
+            Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="aspect-[4/5] w-full" />)
+          ) : (
+            newArrivals.map((p) => (
+              <ProductCard key={p.id} product={p} />
+            ))
+          )}
         </div>
       </section>
 
@@ -158,12 +171,19 @@ export function HomePage() {
             </button>
           </div>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-            {bestsellers.slice(0, 4).map((p) => (
-              <ProductCard key={p.id} product={p} />
-            ))}
+            {isLoading ? (
+              Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="aspect-[4/5] w-full" />)
+            ) : (
+              bestsellers.map((p) => (
+                <ProductCard key={p.id} product={p} />
+              ))
+            )}
           </div>
         </div>
       </section>
+
+      {/* Recently Viewed */}
+      <RecentlyViewedCarousel />
 
       {/* Brand Story */}
       <section className="max-w-screen-xl mx-auto px-6 py-20">

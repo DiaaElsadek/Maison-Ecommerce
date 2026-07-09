@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { useParams, Navigate } from 'react-router';
 import { Heart, Plus, Minus, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/app/components/ui/button';
-import { getProductById, getBestsellers } from '@/data/products';
-import { REVIEWS } from '@/data/reviews';
+import { productsApi } from '@/lib/api/products';
 import { useCart } from '@/hooks/use-cart';
 import { useWishlist } from '@/hooks/use-wishlist';
 import { ProductGallery } from '@/components/product/ProductGallery';
@@ -14,35 +14,63 @@ import { QuantitySelector } from '@/components/product/QuantitySelector';
 import { PriceDisplay } from '@/components/brand/PriceDisplay';
 import { StarRating } from '@/components/brand/StarRating';
 import { ProductGrid } from '@/components/product/ProductGrid';
+import { useRecentlyViewed } from '@/features/recentlyViewed/useRecentlyViewed';
+import { RecentlyViewedCarousel } from '@/features/recentlyViewed/RecentlyViewedCarousel';
 import { cn } from '@/lib/utils';
 import type { ProductColor } from '@/types';
 
 export function ProductDetailPage() {
   const { productId } = useParams<{ productId: string }>();
-  const product = productId ? getProductById(productId) : undefined;
+  
+  const { data: product, isLoading } = useQuery({
+    queryKey: ['product', productId],
+    queryFn: () => productsApi.getProductById(productId!),
+    enabled: !!productId
+  });
+
+  const { data: recommendations = [] } = useQuery({
+    queryKey: ['recommendations', productId],
+    queryFn: () => productsApi.getProductsByCategory(product?.category || '', 4),
+    enabled: !!product?.category
+  });
+
   const { addItem } = useCart();
   const { toggle, isWishlisted } = useWishlist();
+  const { addViewedProduct } = useRecentlyViewed();
 
-  const [color, setColor] = useState<ProductColor | null>(product?.colors[0] ?? null);
+  React.useEffect(() => {
+    if (product?.id) {
+      addViewedProduct(product.id);
+    }
+  }, [product?.id, addViewedProduct]);
+
+  // Mock UI properties to preserve design
+  const mockColors: ProductColor[] = [
+    { name: 'Default', hex: '#1A1814' }
+  ];
+  const mockSizes = ['S', 'M', 'L', 'XL'];
+  const mockDetails = [
+    'Made with high-quality materials',
+    'Designed for durability and comfort',
+    'Imported'
+  ];
+  
+  const [color, setColor] = useState<ProductColor | null>(mockColors[0]);
   const [size, setSize] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [sizeError, setSizeError] = useState(false);
   const [activeTab, setActiveTab] = useState<'details' | 'materials' | 'care'>('details');
   const [added, setAdded] = useState(false);
 
+  if (isLoading) {
+    return <div className="py-20 text-center font-mono-brand">Loading...</div>;
+  }
+
   if (!product) {
     return <Navigate to="/404" replace />;
   }
 
-  // Update color when product changes
-  if (color && !product.colors.includes(color)) {
-    setColor(product.colors[0]);
-    setSize('');
-    setQuantity(1);
-  }
-
-  const wishlisted = isWishlisted(product.id);
-  const recommendations = getBestsellers().filter((p) => p.id !== product.id).slice(0, 4);
+  const wishlisted = isWishlisted(product.id.toString());
 
   const handleAddToCart = () => {
     if (!size) {
@@ -59,19 +87,18 @@ export function ProductDetailPage() {
     <div>
       <div className="max-w-screen-xl mx-auto px-6 py-10">
         <div className="text-xs text-muted-foreground mb-8 font-mono-brand">
-          Home / {product.category} / {product.subcategory} /{' '}
-          <span className="text-foreground">{product.name}</span>
+          Home / {product.category} / <span className="text-foreground">{product.title}</span>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20">
-          <ProductGallery images={product.images} productName={product.name} />
+          <ProductGallery images={[product.image]} productName={product.title} />
 
           {/* Product info */}
           <div className="py-2">
-            <h1 className="text-4xl font-medium mb-3 font-display">{product.name}</h1>
+            <h1 className="text-4xl font-medium mb-3 font-display">{product.title}</h1>
             <div className="flex items-center justify-between mb-6">
-              <PriceDisplay price={product.price} originalPrice={product.originalPrice} size="lg" />
-              <StarRating rating={product.rating} count={product.reviewCount} size="md" />
+              <PriceDisplay price={product.price} size="lg" />
+              <StarRating rating={product.rating?.rate || 0} count={product.rating?.count || 0} size="md" />
             </div>
 
             <p className="text-muted-foreground leading-relaxed mb-8">{product.description}</p>
@@ -79,14 +106,14 @@ export function ProductDetailPage() {
             <div className="space-y-8 border-t border-border pt-8">
               {color && (
                 <ProductColorPicker
-                  colors={product.colors}
+                  colors={mockColors}
                   selectedColor={color}
                   onChange={setColor}
                 />
               )}
 
               <ProductSizePicker
-                sizes={product.sizes}
+                sizes={mockSizes}
                 selectedSize={size}
                 onChange={(s) => {
                   setSize(s);
@@ -127,7 +154,7 @@ export function ProductDetailPage() {
                   </AnimatePresence>
                 </Button>
                 <button
-                  onClick={() => toggle(product.id)}
+                  onClick={() => toggle(product.id.toString())}
                   className={cn(
                     'w-12 h-[52px] flex items-center justify-center border transition-colors',
                     wishlisted ? 'border-foreground text-foreground' : 'border-border text-muted-foreground hover:border-foreground'
@@ -159,13 +186,13 @@ export function ProductDetailPage() {
                 <div className="text-sm text-muted-foreground leading-relaxed min-h-[120px]">
                   {activeTab === 'details' && (
                     <ul className="space-y-2 list-inside list-disc">
-                      {product.details.map((d, i) => (
+                      {mockDetails.map((d, i) => (
                         <li key={i}>{d}</li>
                       ))}
                     </ul>
                   )}
-                  {activeTab === 'materials' && <p>{product.materials}</p>}
-                  {activeTab === 'care' && <p>{product.care}</p>}
+                  {activeTab === 'materials' && <p>100% Quality Materials.</p>}
+                  {activeTab === 'care' && <p>Handle with care. Follow standard care instructions.</p>}
                 </div>
               </div>
             </div>
@@ -180,10 +207,10 @@ export function ProductDetailPage() {
             <div>
               <h2 className="text-3xl mb-4 font-display">Client Reviews</h2>
               <div className="flex items-center gap-4 mb-2">
-                <span className="text-5xl font-light">{product.rating.toFixed(1)}</span>
+                <span className="text-5xl font-light">{product.rating?.rate.toFixed(1) || '0.0'}</span>
                 <div>
-                  <StarRating rating={product.rating} size="md" />
-                  <p className="text-sm text-muted-foreground mt-1">Based on {product.reviewCount} reviews</p>
+                  <StarRating rating={product.rating?.rate || 0} size="md" />
+                  <p className="text-sm text-muted-foreground mt-1">Based on {product.rating?.count || 0} reviews</p>
                 </div>
               </div>
               <Button variant="outline" size="md" className="mt-8">
@@ -191,22 +218,10 @@ export function ProductDetailPage() {
               </Button>
             </div>
             <div className="lg:col-span-2 space-y-8">
-              {REVIEWS.map((r) => (
-                <div key={r.id} className="border-b border-border pb-8 last:border-0 last:pb-0">
-                  <div className="flex justify-between items-start mb-3">
-                    <StarRating rating={r.rating} />
-                    <span className="text-xs text-muted-foreground font-mono-brand">{r.date}</span>
-                  </div>
-                  <h3 className="font-medium mb-2">{r.title}</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed mb-4">{r.body}</p>
-                  <div className="flex items-center justify-between text-xs text-muted-foreground font-mono-brand">
-                    <span>
-                      {r.author} {r.verified && <span className="text-accent ml-2">✓ Verified Buyer</span>}
-                    </span>
-                    <button className="hover:text-foreground">Helpful ({r.helpful})</button>
-                  </div>
-                </div>
-              ))}
+              {/* FakeStoreAPI has no review body data, so we'll omit the static reviews to keep it clean */}
+              <div className="text-muted-foreground text-sm">
+                User reviews are not provided by FakeStoreAPI.
+              </div>
             </div>
           </div>
         </div>
@@ -219,6 +234,9 @@ export function ProductDetailPage() {
         </div>
         <ProductGrid products={recommendations} />
       </section>
+
+      {/* Recently Viewed */}
+      <RecentlyViewedCarousel currentProductId={product.id} />
     </div>
   );
 }

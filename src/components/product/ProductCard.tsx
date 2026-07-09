@@ -1,22 +1,26 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { Heart } from 'lucide-react';
+import { Heart, ArrowLeftRight } from 'lucide-react';
 import { Link } from 'react-router';
 import { cn } from '@/lib/utils';
 import { fmt } from '@/lib/format';
 import { productPath } from '@/config/routes';
 import { useWishlist } from '@/hooks/use-wishlist';
+import { useCompare } from '@/features/compare/useCompare';
 import { StarRating } from '@/components/brand/StarRating';
 import { ProductBadge } from '@/components/brand/Badge';
-import type { Product } from '@/types';
+import type { FakeProduct } from '@/types/api';
 
 interface ProductCardProps {
-  product: Product;
+  product: FakeProduct;
 }
 
 export const ProductCard = React.memo(function ProductCard({ product }: ProductCardProps) {
   const { toggle, isWishlisted } = useWishlist();
-  const wishlisted = isWishlisted(product.id);
+  const wishlisted = isWishlisted(product.id.toString());
+  
+  const { toggleCompare, isComparing } = useCompare();
+  const comparing = isComparing(product.id);
 
   return (
     <motion.div
@@ -26,31 +30,19 @@ export const ProductCard = React.memo(function ProductCard({ product }: ProductC
       transition={{ duration: 0.4 }}
     >
       <div className="relative overflow-hidden bg-secondary mb-3" style={{ aspectRatio: '4/5' }}>
-        <Link to={productPath(product.id)}>
+        <Link to={productPath(product.id.toString())}>
           <img
-            src={product.images[0]}
-            alt={product.name}
+            src={product.image}
+            alt={product.title}
             loading="lazy"
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
           />
-          {product.images[1] && (
-            <img
-              src={product.images[1]}
-              alt={product.name}
-              loading="lazy"
-              className="w-full h-full object-cover absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100"
-            />
-          )}
         </Link>
         <div className="absolute top-3 left-3 flex flex-col gap-1">
-          {product.isNew && <ProductBadge variant="new">New</ProductBadge>}
-          {product.isSale && <ProductBadge variant="sale">Sale</ProductBadge>}
-          {product.isBestseller && !product.isNew && (
-            <ProductBadge variant="bestseller">Bestseller</ProductBadge>
-          )}
+          {product.rating?.rate > 4.5 && <ProductBadge variant="bestseller">Top Rated</ProductBadge>}
         </div>
         <button
-          onClick={() => toggle(product.id)}
+          onClick={() => toggle(product.id.toString())}
           className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center bg-white/80 backdrop-blur-sm transition-all hover:bg-white"
           aria-label={wishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
         >
@@ -61,28 +53,35 @@ export const ProductCard = React.memo(function ProductCard({ product }: ProductC
             )}
           />
         </button>
+        <button
+          onClick={() => toggleCompare(product.id)}
+          className="absolute top-12 right-3 w-8 h-8 flex items-center justify-center bg-white/80 backdrop-blur-sm transition-all hover:bg-white mt-2"
+          aria-label={comparing ? 'Remove from compare' : 'Add to compare'}
+        >
+          <ArrowLeftRight
+            className={cn(
+              'w-4 h-4',
+              comparing ? 'text-accent' : 'text-foreground'
+            )}
+          />
+        </button>
         <div className="absolute bottom-0 inset-x-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
           <Link
-            to={productPath(product.id)}
+            to={productPath(product.id.toString())}
             className="inline-flex items-center justify-center gap-2 w-full px-4 py-2 bg-foreground text-primary-foreground text-xs tracking-[0.08em] uppercase font-medium font-mono-brand transition-all hover:bg-foreground/85"
           >
             Quick View
           </Link>
         </div>
       </div>
-      <Link to={productPath(product.id)} className="block">
-        <p className="label-mono text-muted-foreground mb-0.5">{product.subcategory}</p>
-        <h3 className="text-sm font-medium text-foreground mb-1 leading-tight">{product.name}</h3>
+      <Link to={productPath(product.id.toString())} className="block">
+        <p className="label-mono text-muted-foreground mb-0.5 truncate">{product.category}</p>
+        <h3 className="text-sm font-medium text-foreground mb-1 leading-tight line-clamp-1">{product.title}</h3>
         <div className="flex items-center gap-2">
           <span className="text-sm text-foreground">{fmt(product.price)}</span>
-          {product.originalPrice && (
-            <span className="text-sm text-muted-foreground line-through">
-              {fmt(product.originalPrice)}
-            </span>
-          )}
         </div>
         <div className="mt-1">
-          <StarRating rating={product.rating} count={product.reviewCount} />
+          <StarRating rating={product.rating?.rate || 0} count={product.rating?.count || 0} />
         </div>
       </Link>
     </motion.div>

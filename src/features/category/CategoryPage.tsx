@@ -2,29 +2,49 @@ import React, { useState, useMemo } from 'react';
 import { useParams } from 'react-router';
 import { SlidersHorizontal, LayoutGrid, List } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { PRODUCTS, getProductsByCategory } from '@/data/products';
 import { ProductCard } from '@/components/product/ProductCard';
 import { ProductListItem } from '@/components/product/ProductListItem';
 import { CategoryFilters } from './CategoryFilters';
-import type { SortOption, ViewMode } from '@/types';
+import { useQuery } from '@tanstack/react-query';
+import { productsApi } from '@/lib/api/products';
+import { Skeleton } from '@/app/components/ui/skeleton';
+import { usePreferences } from '@/features/preferences/usePreferences';
+import type { SortOption } from '@/types';
 
 export function CategoryPage() {
   const { category } = useParams<{ category: string }>();
 
+  // Map UI categories to FakeStoreAPI categories
+  const categoryMap: Record<string, string> = {
+    "Women": "women's clothing",
+    "Men": "men's clothing",
+    "Accessories": "jewelery",
+    "Beauty": "electronics",
+    "Maison": "electronics"
+  };
+
+  const mappedCategory = category ? (categoryMap[category] || category.toLowerCase()) : undefined;
+
   const [sort, setSort] = useState<SortOption>('featured');
   const [filterOpen, setFilterOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  const { viewMode, setViewMode } = usePreferences();
   const [priceRange, setPriceRange] = useState([0, 3000]);
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
   const [showCount, setShowCount] = useState(8);
 
+  const { data: apiProducts = [], isLoading } = useQuery({
+    queryKey: ['products', mappedCategory],
+    queryFn: () => mappedCategory ? productsApi.getProductsByCategory(mappedCategory) : productsApi.getAllProducts()
+  });
+
   const filtered = useMemo(() => {
-    let items = category ? getProductsByCategory(category) : PRODUCTS;
+    let items = apiProducts;
 
     items = items.filter((p) => p.price <= priceRange[1]);
 
     if (selectedSizes.length > 0) {
-      items = items.filter((p) => p.sizes.some((s) => selectedSizes.includes(s)));
+      // FakeStoreAPI doesn't have sizes, we'll mock size filtering by just passing them through if it's not strictly typed.
+      // We will skip size filtering for fake store since there are no sizes.
     }
 
     return items;
@@ -34,9 +54,8 @@ export function CategoryPage() {
     return [...filtered].sort((a, b) => {
       if (sort === 'price-asc') return a.price - b.price;
       if (sort === 'price-desc') return b.price - a.price;
-      if (sort === 'rating') return b.rating - a.rating;
-      if (sort === 'newest') return (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0);
-      return (b.isBestseller ? 1 : 0) - (a.isBestseller ? 1 : 0);
+      if (sort === 'rating') return (b.rating?.rate || 0) - (a.rating?.rate || 0);
+      return 0; // FakeStore doesn't have newest/bestseller properties
     });
   }, [filtered, sort]);
 
@@ -122,7 +141,22 @@ export function CategoryPage() {
 
           {/* Product Grid/List */}
           <div className="flex-1">
-            {sorted.length === 0 ? (
+            {isLoading ? (
+              <div
+                className={cn(
+                  'grid gap-6',
+                  viewMode === 'grid'
+                    ? filterOpen
+                      ? 'grid-cols-2 lg:grid-cols-3'
+                      : 'grid-cols-2 lg:grid-cols-4'
+                    : 'grid-cols-1'
+                )}
+              >
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <Skeleton key={i} className={viewMode === 'grid' ? "aspect-[4/5] w-full" : "h-40 w-full"} />
+                ))}
+              </div>
+            ) : sorted.length === 0 ? (
               <div className="text-center py-20">
                 <p className="text-muted-foreground">No pieces match your current filters.</p>
                 <button

@@ -1,5 +1,15 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
 
 // Providers
 import { CartProvider } from '@/contexts/cart-context';
@@ -33,8 +43,9 @@ import { ErrorBoundary } from '@/features/errors/ErrorBoundary';
 export default function App() {
   return (
     <ErrorBoundary>
-      <AuthProvider>
-        <CartProvider>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <CartProvider>
           <WishlistProvider>
             <BrowserRouter>
               <Routes>
@@ -70,6 +81,7 @@ export default function App() {
           </WishlistProvider>
         </CartProvider>
       </AuthProvider>
+      </QueryClientProvider>
     </ErrorBoundary>
   );
 }

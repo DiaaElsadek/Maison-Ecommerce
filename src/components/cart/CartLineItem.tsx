@@ -17,20 +17,20 @@ export function CartLineItem({ item }: CartLineItemProps) {
   return (
     <div className="flex gap-6 py-8 border-b border-border">
       <Link
-        to={productPath(item.product.id)}
+        to={productPath(item.product.id.toString())}
         className="w-24 h-32 flex-shrink-0 bg-secondary overflow-hidden"
       >
         <img
-          src={item.product.images[0]}
-          alt={item.product.name}
+          src={item.product.image}
+          alt={item.product.title}
           className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
         />
       </Link>
       <div className="flex-1">
         <div className="flex justify-between">
           <div>
-            <p className="label-mono text-muted-foreground mb-1">{item.product.subcategory}</p>
-            <h3 className="font-medium text-base mb-1">{item.product.name}</h3>
+            <p className="label-mono text-muted-foreground mb-1">{item.product.category}</p>
+            <h3 className="font-medium text-base mb-1">{item.product.title}</h3>
             <p className="text-xs text-muted-foreground font-mono-brand">
               {item.color} · Size {item.size}
             </p>
@@ -38,7 +38,7 @@ export function CartLineItem({ item }: CartLineItemProps) {
           <button
             onClick={() => removeItem(item.product.id, item.size, item.color)}
             className="p-1 hover:text-destructive transition-colors"
-            aria-label={`Remove ${item.product.name} from cart`}
+            aria-label={`Remove ${item.product.title} from cart`}
           >
             <X className="w-4 h-4" />
           </button>

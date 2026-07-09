@@ -1,3 +1,5 @@
+import type { FakeProduct } from '@/types/api';
+
 export interface ProductColor {
   name: string;
   hex: string;
@@ -26,7 +28,7 @@ export interface Product {
 }
 
 export interface CartItem {
-  product: Product;
+  product: FakeProduct;
   quantity: number;
   color: string;
   size: string;

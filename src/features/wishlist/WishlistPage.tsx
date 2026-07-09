@@ -2,15 +2,35 @@ import React from 'react';
 import { useNavigate } from 'react-router';
 import { Heart } from 'lucide-react';
 import { Button } from '@/app/components/ui/button';
-import { PRODUCTS } from '@/data/products';
+import { useQuery } from '@tanstack/react-query';
+import { productsApi } from '@/lib/api/products';
 import { ProductCard } from '@/components/product/ProductCard';
+import { Skeleton } from '@/app/components/ui/skeleton';
 import { useWishlist } from '@/hooks/use-wishlist';
 
 export function WishlistPage() {
   const navigate = useNavigate();
   const { ids } = useWishlist();
 
-  const items = PRODUCTS.filter((p) => ids.includes(p.id));
+  const { data: allProducts = [], isLoading } = useQuery({
+    queryKey: ['all-products'],
+    queryFn: () => productsApi.getAllProducts()
+  });
+
+  const items = allProducts.filter((p) => ids.includes(p.id.toString()));
+
+  if (isLoading) {
+    return (
+      <div className="max-w-screen-xl mx-auto px-6 py-10">
+        <h1 className="text-4xl text-foreground font-display mb-10">Wishlist</h1>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="aspect-[4/5] w-full" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   if (items.length === 0) {
     return (
