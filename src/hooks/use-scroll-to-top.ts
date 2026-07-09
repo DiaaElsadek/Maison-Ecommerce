@@ -1,0 +1,14 @@
+import { useEffect } from 'react';
+import { useLocation } from 'react-router';
+
+/**
+ * Scrolls to the top of the page on route change.
+ * Uses smooth scrolling to match the existing UX.
+ */
+export function useScrollToTop() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [pathname]);
+}
