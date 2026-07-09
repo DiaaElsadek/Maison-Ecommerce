@@ -7,7 +7,7 @@ export interface UIPreferences {
 
 export const preferencesStorage = new StorageService<UIPreferences>({
   key: 'maison_preferences_v1',
-  version: 1,
+  version: 2,
   fallback: { viewMode: 'grid' },
   validate: (data): data is UIPreferences => {
     return typeof data === 'object' && data !== null && ('viewMode' in data);

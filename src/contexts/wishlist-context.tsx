@@ -1,5 +1,7 @@
 import React, { createContext, useCallback, useMemo, useState } from 'react';
 
+import { StorageService } from '@/lib/storage';
+
 interface WishlistContextValue {
   ids: string[];
   count: number;
@@ -10,26 +12,20 @@ interface WishlistContextValue {
 
 const WishlistContext = createContext<WishlistContextValue | null>(null);
 
-function loadWishlistFromStorage(): string[] {
-  try {
-    const raw = localStorage.getItem('maison-wishlist');
-    return raw ? (JSON.parse(raw) as string[]) : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveWishlistToStorage(ids: string[]): void {
-  localStorage.setItem('maison-wishlist', JSON.stringify(ids));
-}
+const wishlistStorage = new StorageService<string[]>({
+  key: 'maison-wishlist',
+  version: 2,
+  fallback: [],
+  validate: (data): data is string[] => Array.isArray(data) && data.every(item => typeof item === 'string')
+});
 
 export function WishlistProvider({ children }: { children: React.ReactNode }) {
-  const [ids, setIds] = useState<string[]>(loadWishlistFromStorage);
+  const [ids, setIds] = useState<string[]>(wishlistStorage.get());
 
   const toggle = useCallback((id: string) => {
     setIds((prev) => {
       const next = prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id];
-      saveWishlistToStorage(next);
+      wishlistStorage.set(next);
       return next;
     });
   }, []);
@@ -38,7 +34,7 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
 
   const clear = useCallback(() => {
     setIds([]);
-    saveWishlistToStorage([]);
+    wishlistStorage.clear();
   }, []);
 
   const count = ids.length;

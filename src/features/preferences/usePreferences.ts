@@ -26,6 +26,6 @@ export function usePreferences() {
 
   return { 
     viewMode: preferences.viewMode, 
-    setViewMode 
+    setViewMode
   };
 }

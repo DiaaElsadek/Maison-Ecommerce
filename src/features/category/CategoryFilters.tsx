@@ -1,11 +1,10 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { CATEGORIES } from '@/data/categories';
-import { Link } from 'react-router';
-import { shopPath } from '@/config/routes';
 
 interface CategoryFiltersProps {
   currentCategory?: string;
+  onSelectCategory: (cat?: string) => void;
   priceRange: number[];
   setPriceRange: (range: number[]) => void;
   selectedSizes: string[];
@@ -14,6 +13,7 @@ interface CategoryFiltersProps {
 
 export function CategoryFilters({
   currentCategory,
+  onSelectCategory,
   priceRange,
   setPriceRange,
   selectedSizes,
@@ -31,10 +31,21 @@ export function CategoryFilters({
     <aside className="w-56 flex-shrink-0 space-y-8">
       <div>
         <p className="label-mono font-medium mb-4">Category</p>
+        <button
+            onClick={() => onSelectCategory(undefined)}
+            className={cn(
+              'block w-full text-left py-1.5 text-sm transition-colors',
+              !currentCategory
+                ? 'text-foreground font-medium'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            All Categories
+          </button>
         {CATEGORIES.map((c) => (
-          <Link
+          <button
             key={c.id}
-            to={shopPath(c.id)}
+            onClick={() => onSelectCategory(currentCategory === c.id ? undefined : c.id)}
             className={cn(
               'block w-full text-left py-1.5 text-sm transition-colors',
               c.id === currentCategory
@@ -43,7 +54,7 @@ export function CategoryFilters({
             )}
           >
             {c.name}
-          </Link>
+          </button>
         ))}
       </div>
 

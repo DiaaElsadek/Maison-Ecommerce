@@ -9,6 +9,7 @@ import { useWishlist } from '@/hooks/use-wishlist';
 import { useCompare } from '@/features/compare/useCompare';
 import { StarRating } from '@/components/brand/StarRating';
 import { ProductBadge } from '@/components/brand/Badge';
+import { QuickViewModal } from '@/components/product/QuickViewModal';
 import type { FakeProduct } from '@/types/api';
 
 interface ProductCardProps {
@@ -22,8 +23,11 @@ export const ProductCard = React.memo(function ProductCard({ product }: ProductC
   const { toggleCompare, isComparing } = useCompare();
   const comparing = isComparing(product.id);
 
+  const [quickViewOpen, setQuickViewOpen] = React.useState(false);
+
   return (
-    <motion.div
+    <>
+      <motion.div
       className="group cursor-pointer"
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
@@ -66,12 +70,15 @@ export const ProductCard = React.memo(function ProductCard({ product }: ProductC
           />
         </button>
         <div className="absolute bottom-0 inset-x-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-          <Link
-            to={productPath(product.id.toString())}
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              setQuickViewOpen(true);
+            }}
             className="inline-flex items-center justify-center gap-2 w-full px-4 py-2 bg-foreground text-primary-foreground text-xs tracking-[0.08em] uppercase font-medium font-mono-brand transition-all hover:bg-foreground/85"
           >
             Quick View
-          </Link>
+          </button>
         </div>
       </div>
       <Link to={productPath(product.id.toString())} className="block">
@@ -84,6 +91,12 @@ export const ProductCard = React.memo(function ProductCard({ product }: ProductC
           <StarRating rating={product.rating?.rate || 0} count={product.rating?.count || 0} />
         </div>
       </Link>
-    </motion.div>
+      </motion.div>
+      <QuickViewModal
+        product={product}
+        open={quickViewOpen}
+        onOpenChange={setQuickViewOpen}
+      />
+    </>
   );
 });

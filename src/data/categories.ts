@@ -18,14 +18,14 @@ export const CATEGORIES: Category[] = [
   {
     id: 'Accessories',
     name: 'Accessories',
-    image: 'https://images.unsplash.com/photo-1576053139778-7e32f2ae3cda?w=600&h=800&fit=crop&auto=format',
+    image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQEhQ_h9Umf9Tv8LiRzBCuQrib73WXr8E_vO72e7QIzjQ&s=10',
     count: 76,
     tagline: 'Bags, jewellery & watches',
   },
   {
     id: 'Beauty',
     name: 'Beauty',
-    image: 'https://images.unsplash.com/photo-1541643600914-78b084683702?w=600&h=800&fit=crop&auto=format',
+    image: 'https://aureatelabs.com/wp-content/uploads/2024/11/Choose-your-business-niche.png',
     count: 34,
     tagline: 'Fragrance & skincare',
   },

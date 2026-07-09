@@ -13,6 +13,12 @@ import type { SortOption } from '@/types';
 
 export function CategoryPage() {
   const { category } = useParams<{ category: string }>();
+  const [activeCategory, setActiveCategory] = useState<string | undefined>(category);
+
+  // Sync state if URL changes
+  React.useEffect(() => {
+    setActiveCategory(category);
+  }, [category]);
 
   // Map UI categories to FakeStoreAPI categories
   const categoryMap: Record<string, string> = {
@@ -23,7 +29,7 @@ export function CategoryPage() {
     "Maison": "electronics"
   };
 
-  const mappedCategory = category ? (categoryMap[category] || category.toLowerCase()) : undefined;
+  const mappedCategory = activeCategory ? (categoryMap[activeCategory] || activeCategory.toLowerCase()) : undefined;
 
   const [sort, setSort] = useState<SortOption>('featured');
   const [filterOpen, setFilterOpen] = useState(false);
@@ -33,12 +39,16 @@ export function CategoryPage() {
   const [showCount, setShowCount] = useState(8);
 
   const { data: apiProducts = [], isLoading } = useQuery({
-    queryKey: ['products', mappedCategory],
-    queryFn: () => mappedCategory ? productsApi.getProductsByCategory(mappedCategory) : productsApi.getAllProducts()
+    queryKey: ['products-all'],
+    queryFn: () => productsApi.getAllProducts()
   });
 
   const filtered = useMemo(() => {
     let items = apiProducts;
+
+    if (mappedCategory) {
+      items = items.filter(p => p.category === mappedCategory);
+    }
 
     items = items.filter((p) => p.price <= priceRange[1]);
 
@@ -48,7 +58,7 @@ export function CategoryPage() {
     }
 
     return items;
-  }, [category, priceRange, selectedSizes]);
+  }, [apiProducts, mappedCategory, priceRange, selectedSizes]);
 
   const sorted = useMemo(() => {
     return [...filtered].sort((a, b) => {
@@ -68,7 +78,7 @@ export function CategoryPage() {
           Collection
         </p>
         <h1 className="text-5xl text-foreground font-display">
-          {category ? category : 'All Pieces'}
+          {activeCategory ? activeCategory : 'All Pieces'}
         </h1>
       </div>
 
@@ -131,7 +141,8 @@ export function CategoryPage() {
           {/* Filters sidebar */}
           {filterOpen && (
             <CategoryFilters
-              currentCategory={category}
+              currentCategory={activeCategory}
+              onSelectCategory={setActiveCategory}
               priceRange={priceRange}
               setPriceRange={setPriceRange}
               selectedSizes={selectedSizes}
@@ -161,6 +172,7 @@ export function CategoryPage() {
                 <p className="text-muted-foreground">No pieces match your current filters.</p>
                 <button
                   onClick={() => {
+                    setActiveCategory(undefined);
                     setPriceRange([0, 3000]);
                     setSelectedSizes([]);
                   }}
